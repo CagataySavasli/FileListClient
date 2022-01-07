@@ -7,8 +7,6 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Time;
-import java.time.Duration;
 import java.util.Scanner;
 import java.util.concurrent.*;
 
@@ -103,7 +101,7 @@ public class dummyClient {
             StringBuffer sb = new StringBuffer();
 
             for (int i = 0; i < data.length; ++i) {
-                sb.append(Integer.toHexString((data[i] & 0xFF) | 0x100).substring(1, 3));
+                sb.append(Integer.toHexString((data[i] & 0xFF) | 0x100).substring(1,3));
             }
 
             return sb.toString();
@@ -111,6 +109,7 @@ public class dummyClient {
             throw new RuntimeException(e);
         }
     }
+
 
     public boolean RTT(dummyClient inst, String ip, int port1, int port2) throws IOException {
         long t1_before = System.currentTimeMillis();
@@ -123,7 +122,6 @@ public class dummyClient {
 
         long t1 = t1_after - t1_before;
         long t2 = t2_after - t2_before;
-        System.out.println("*******************"+t1+"-"+t2);
         if (t1 <= t2) {
             Rtt = t1;
             return true;
@@ -131,158 +129,141 @@ public class dummyClient {
             Rtt = t2;
             return false;
         }
-
-
     }
 
-        public static byte[] longToBytes ( long x){
-            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-            buffer.putLong(x);
-            return buffer.array();
+    public static byte[] longToBytes ( long x){
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        buffer.putLong(x);
+        return buffer.array();
+    }
+
+    public static void main (String[]args) throws Exception {
+        int theFastestProt;
+        long start_byte = 1;
+        long packetByte = 1000;
+
+        Scanner scanner = new Scanner(System.in);
+        if (args.length < 1) {
+            throw new IllegalArgumentException("ip:port is mandatory");
+        }
+        String[] adr = args[0].split(":");
+        String ip = adr[0];
+        int port1 = Integer.valueOf(adr[1]);
+        int port2 = Integer.valueOf(adr[2]);
+
+        dummyClient inst = new dummyClient();
+
+        inst.sendInvalidRequest(ip, port1);
+        inst.getFileList(ip, port1);
+        System.out.print("Enter a number : ");
+        int file_id = scanner.nextInt();
+        long file_size = inst.getFileSize(ip, port1, file_id);
+        System.out.println("File " + file_id + " has been selected. Getting the size information…");
+
+        if (inst.RTT(inst, ip, port1, port2)) {
+            theFastestProt = port1;
+        } else {
+            theFastestProt = port2;
         }
 
-        public static void main (String[]args) throws Exception {
-            int theFastestProt;
-            long start_byte = 1;
-            long packetByte = 1000;
+        byte[] file_size_AsByte = longToBytes(file_size);
 
-            Scanner scanner = new Scanner(System.in);
-            if (args.length < 1) {
-                throw new IllegalArgumentException("ip:port is mandatory");
-            }
-            String[] adr = args[0].split(":");
-            String ip = adr[0];
-            int port1 = Integer.valueOf(adr[1]);
-            int port2 = Integer.valueOf(adr[2]);
+        clientObj client = new clientObj(file_id, ip, theFastestProt, inst, -1, -1);
+        client.clientFunciton();
 
+        System.out.println("File " + file_id + "is " + file_size + " bytes. Starting to download…");
 
-            dummyClient inst = new dummyClient();
+        long end_byte = packetByte;
+        int port;
+        long timer;
+        var x = 1;
 
+        long time = System.currentTimeMillis();
 
-            inst.sendInvalidRequest(ip, port1);
-            inst.getFileList(ip, port1);
-            System.out.print("Enter a number : ");
-            int file_id = scanner.nextInt();
-            long file_size = inst.getFileSize(ip, port1, file_id);
-            System.out.println("File " + file_id + " has been selected. Getting the size information…");
+        while (start_byte < file_size) {
 
-            if (inst.RTT(inst, ip, port1, port2)) {
-                theFastestProt = port1;
+            if (file_size - start_byte > 1000) {
+
+                clientObj client_2 = new clientObj(file_id, ip, theFastestProt, inst, start_byte, end_byte);
+                client_2.clientFunciton();
+
+                timer = client_2.getTimer();
+
+                if (timer == 0) timer = 1;
+
+                System.out.println("File is downloading in port no: " + theFastestProt + "\n" + "Downloading in speed (Bytes / ms): " + (packetByte / timer) + "\n" + "Time passed: " + (System.currentTimeMillis() - time) + " ms \n");
+
+                start_byte += packetByte;
+                end_byte += packetByte;
+                x++;
+
             } else {
-                theFastestProt = port2;
+                clientObj client_3 = new clientObj(file_id, ip, theFastestProt, inst, start_byte, file_size);
+                client_3.clientFunciton();
+
+                System.out.println("File " + file_id + " has been downloaded in " + (System.currentTimeMillis() - time) + " ms. in port " + theFastestProt);
+
+                System.out.println("Download completed.");
+                break;
             }
-
-
-
-            System.out.println("**********************"+Rtt);
-            byte[] file_size_AsByte = longToBytes(file_size);
-
-            myThread thread = new myThread(file_id, ip, theFastestProt, inst, -1, -1);
-            thread.run();
-
-            System.out.println("File " + file_id + "is " + file_size + " bytes. Starting to download…");
-
-            long end_byte = packetByte;
-            int port;
-            long timer;
-            var x = 1;
-
-            long time = System.currentTimeMillis();
-
-            while (start_byte < file_size) {
-
-                if (file_size - start_byte > 1000) {
-
-                    myThread thread2 = new myThread(file_id, ip, theFastestProt, inst, start_byte, end_byte);
-                    thread2.run();
-
-                    timer = thread2.getTimer();
-
-                    if (timer == 0) timer = 1;
-
-                    System.out.println("File is downloading in port no: " + theFastestProt + "\n" + "Downloading in speed (Bytes / ms): " + (packetByte / timer) + "\n" + "Time passed: " + (System.currentTimeMillis() - time) + " ms \n");
-
-                    start_byte += packetByte;
-                    end_byte += packetByte;
-                    x++;
-
-                } else {
-                    myThread thread3 = new myThread(file_id, ip, theFastestProt, inst, start_byte, file_size);
-                    thread3.run();
-
-                    System.out.println("File " + file_id + " has been downloaded in " + (System.currentTimeMillis() - time) + " ms. in port " + theFastestProt);
-
-                    System.out.println("Download completed.");
-                    break;
-                }
-            }
-
-            String md5sum = md5Sum(file_size_AsByte);
-
-            System.out.println("File " + file_id + " has been downloaded in " + (System.currentTimeMillis() - time) + " ms. The md5 hash is  " + md5sum);
-            System.exit(0);
-
-        /*
-        if(inst.RTT(inst, ip, port1, port2)){ inst.getFileData(ip, port1, file_id, 1, file_size);}
-        else { inst.getFileData(ip, port2, file_id, 1, file_size);}
-        System.out.println(file_size);*/
-
-
         }
 
+        String md5sum = md5Sum(file_size_AsByte);
 
+        System.out.println("File " + file_id + " has been downloaded in " + (System.currentTimeMillis() - time) + " ms. The md5 hash is  " + md5sum);
+        System.exit(0);
+    }
 }
 
-class myThread extends Thread {
+class clientObj extends Thread {
 
-    int fileId;
-    String ip;
-    int port;
     dummyClient inst;
+    int file_id;
+    int port;
+    String ip;
     long start;
     long end;
-    long size;
+    long file_size;
     long timer;
 
 
-    Future<Object> obj;
-    ExecutorService exc;
+    Future<Object> promise;
+    ExecutorService THREAD_POOL;
 
-    public myThread(int fileId, String ip, int port, dummyClient inst, long start, long end) {
+    public clientObj(int file_id, String ip, int port, dummyClient inst, long start, long end) {
 
-        this.fileId = fileId;
+        this.file_id = file_id;
         this.ip = ip;
         this.port = port;
         this.inst = inst;
         this.start = start;
         this.end = end;
 
-        exc = Executors.newSingleThreadExecutor();
+        THREAD_POOL = Executors.newSingleThreadExecutor();
     }
 
-    public void run() {
+    public void clientFunciton() {
 
         try {
-            obj = exc.submit(() -> {
-                size = inst.getFileSize(ip, port, fileId);
+            promise = THREAD_POOL.submit(() -> {
+                file_size = inst.getFileSize(ip, port, file_id);
                 return 0;
             });
-
-            obj.get(timer, TimeUnit.MILLISECONDS); //to throw exception
+            promise.get(timer, TimeUnit.MILLISECONDS);
         } catch (final TimeoutException e) {
 
             try {
-                size = inst.getFileSize(ip, port, fileId);
+                file_size = inst.getFileSize(ip, port, file_id);
 
             } catch (IOException ex) {
                 System.out.println("IO error");
             }
-            obj.cancel(true);
+            promise.cancel(true);
 
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-        exc.shutdown();
+        THREAD_POOL.shutdown();
     }
 
     public long getTimer() {
@@ -290,5 +271,4 @@ class myThread extends Thread {
     }
 
 }
-
 
