@@ -83,28 +83,46 @@ public class dummyClient {
             };
         }
 	}
+
+    public boolean RTT(dummyClient inst, String ip, int port1, int port2) throws IOException{
+        long t1_before = System.currentTimeMillis();
+        inst.sendInvalidRequest(ip,port1);
+        long t1_after = System.currentTimeMillis();
+
+        long t2_before = System.currentTimeMillis();
+        inst.sendInvalidRequest(ip,port2);
+        long t2_after = System.currentTimeMillis();
+
+        long t1 = t1_after - t1_before;
+        long t2 = t2_after - t2_before;
+        if (t1 <= t2){ return true;}
+        else{ return false;}
+    }
 	
 	public static void main(String[] args) throws Exception{
         Scanner scanner = new Scanner(System.in);
 		if (args.length<1){
 			throw new IllegalArgumentException("ip:port is mandatory");
 		}
-		String[] adr1=args[0].split(":");
-		String ip1=adr1[0];
-		int port1=Integer.valueOf(adr1[1]);
-        int port2=Integer.valueOf(adr1[2]);
+		String[] adr=args[0].split(":");
+		String ip=adr[0];
+		int port1=Integer.valueOf(adr[1]);
+        int port2=Integer.valueOf(adr[2]);
 
 
 		dummyClient inst=new dummyClient();
 
 
-        inst.sendInvalidRequest(ip1,port1);
-        inst.getFileList(ip1,port1);
+        inst.sendInvalidRequest(ip,port1);
+        inst.getFileList(ip,port1);
         System.out.print("Enter a number : ");
         int file_id = scanner.nextInt();
-        long file_size = inst.getFileSize(ip1, port1, file_id);
+        long file_size = inst.getFileSize(ip, port1, file_id);
         System.out.println("File "+file_id+" has been selected. Getting the size information…");
         System.out.println("File "+file_id+"is "+file_size+" bytes. Starting to download…");
+        if(inst.RTT(inst, ip, port1, port2)){ inst.getFileData(ip, port1, file_id, 1, file_size);}
+        else { inst.getFileData(ip, port2, file_id, 1, file_size);}
+        System.out.println(file_size);
 
         /*
         inst.sendInvalidRequest(ip1,port1);
