@@ -5,6 +5,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import java.util.Scanner;
+
 import model.FileDataResponseType;
 import model.FileListResponseType;
 import model.FileSizeResponseType;
@@ -82,19 +84,31 @@ public class dummyClient {
 	}
 	
 	public static void main(String[] args) throws Exception{
+        Scanner scanner = new Scanner(System.in);
 		if (args.length<1){
 			throw new IllegalArgumentException("ip:port is mandatory");
 		}
 		String[] adr1=args[0].split(":");
 		String ip1=adr1[0];
 		int port1=Integer.valueOf(adr1[1]);
+
 		dummyClient inst=new dummyClient();
-		inst.sendInvalidRequest(ip1,port1);
+
+        inst.getFileList(ip1, port1);
+        System.out.print("Enter a number : ");
+        int file_id = scanner.nextInt();
+        long file_size = inst.getFileSize(ip1, port1, file_id);
+        System.out.println("File "+file_id+" has been selected. Getting the size information…");
+        System.out.println("File "+file_id+"is "+file_size+" bytes. Starting to download…");
+
+        /*
+        inst.sendInvalidRequest(ip1,port1);
 		inst.getFileList(ip1,port1);
 		inst.getFileSize(ip1,port1,0);
 		long size=inst.getFileSize(ip1,port1,1);
 		inst.getFileData(ip1,port1,0,0,1);
 		inst.getFileData(ip1,port1,1,30,20);
 		inst.getFileData(ip1,port1,1,1,size);
+         */
 	}
 }
