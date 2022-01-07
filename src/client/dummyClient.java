@@ -43,7 +43,8 @@ public class dummyClient {
         dsocket.receive(receivePacket);
         FileListResponseType response=new FileListResponseType(receivePacket.getData());
         loggerManager.getInstance(this.getClass()).debug(response.toString());
-	}
+    }
+
 	
 	private long getFileSize(String ip, int port, int file_id) throws IOException{
 		InetAddress IPAddress = InetAddress.getByName(ip); 
@@ -91,10 +92,14 @@ public class dummyClient {
 		String[] adr1=args[0].split(":");
 		String ip1=adr1[0];
 		int port1=Integer.valueOf(adr1[1]);
+        int port2=Integer.valueOf(adr1[2]);
+
 
 		dummyClient inst=new dummyClient();
 
-        inst.getFileList(ip1, port1);
+
+        inst.sendInvalidRequest(ip1,port1);
+        inst.getFileList(ip1,port1);
         System.out.print("Enter a number : ");
         int file_id = scanner.nextInt();
         long file_size = inst.getFileSize(ip1, port1, file_id);
