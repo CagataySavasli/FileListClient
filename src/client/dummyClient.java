@@ -1,10 +1,16 @@
 package client;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.util.Scanner;
 
 import model.FileDataResponseType;
@@ -98,9 +104,28 @@ public class dummyClient {
         if (t1 <= t2){ return true;}
         else{ return false;}
     }
-	
-	public static void main(String[] args) throws Exception{
+/*
+    public String MD5(String md5) {
+        String md5string = "";
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            byte[] array = md.digest(md5.getBytes());
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < array.length; ++i) {
+                sb.append(Integer.toHexString((array[i] & 0xFF) | 0x100).substring(1,3));
+            }
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            return null;
+        }
+    }
+
+*/
+
+    public static void main(String[] args) throws Exception{
         Scanner scanner = new Scanner(System.in);
+
+
 		if (args.length<1){
 			throw new IllegalArgumentException("ip:port is mandatory");
 		}
@@ -122,7 +147,21 @@ public class dummyClient {
         System.out.println("File "+file_id+"is "+file_size+" bytes. Starting to download…");
         if(inst.RTT(inst, ip, port1, port2)){ inst.getFileData(ip, port1, file_id, 1, file_size);}
         else { inst.getFileData(ip, port2, file_id, 1, file_size);}
+
         System.out.println(file_size);
+
+
+        /*
+        System.out.println(System.getProperty(String.valueOf(file_id)));
+        System.out.println("file id aldi");
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        InputStream is = Files.newInputStream(Paths.get(String.valueOf(file_id)));
+        DigestInputStream dis = new DigestInputStream(is, md);
+        byte[] digest = md.digest();
+        System.out.println("File" +file_id+ "has been downloaded in 32345 ms. The md5 hash is " + md.digest());
+        //kod bu. bunun çalışması için download edilen kodu bulmamız ve sonra Paths.get() içerisine path'ini yazmamız gerekiyor.
+        //uzaktaki dosyayı hashleyemiyoruz
+        */
 
         /*
         inst.sendInvalidRequest(ip1,port1);
@@ -132,6 +171,6 @@ public class dummyClient {
 		inst.getFileData(ip1,port1,0,0,1);
 		inst.getFileData(ip1,port1,1,30,20);
 		inst.getFileData(ip1,port1,1,1,size);
-         */
+        */
 	}
 }
